@@ -20,7 +20,7 @@ _protobuf_commit=cc7b1b5
 _zipcode_rel=202110
 
 _pkgbase=mozc
-pkgname=fcitx5-mozc
+pkgname=fcitx5-mozc-w-emacs
 pkgdesc="Fcitx5 Module of A Japanese Input Method for Chromium OS, Windows, Mac and Linux (the Open Source Edition of Google Japanese Input)"
 pkgver=2.26.4632.102.g4d2e3bd
 pkgrel=2
@@ -30,7 +30,7 @@ license=('custom')
 depends=('qt5-base' 'fcitx5')
 makedepends=('pkg-config' 'python' 'curl' 'gtk2' 'mesa' 'subversion' 'bazel' 'git' 'clang' 'python-six')
 replaces=('mozc-fcitx')
-conflicts=('mozc' 'mozc-server' 'mozc-utils-gui' 'mozc-fcitx' 'fcitx-mozc')
+conflicts=('mozc' 'mozc-server' 'mozc-utils-gui' 'mozc-fcitx' 'fcitx-mozc' 'fcitx5-mozc')
 source=(git+https://github.com/fcitx/mozc.git#commit=${_mozc_commit}
         https://osdn.net/projects/ponsfoot-aur/storage/mozc/jigyosyo-${_zipcode_rel}.zip
         https://osdn.net/projects/ponsfoot-aur/storage/mozc/x-ken-all-${_zipcode_rel}.zip
@@ -97,6 +97,8 @@ build() {
 
   cd mozc/src
 
+  sed -i -r 's#^bazel\sbuild.*$#\0 unix/emacs:mozc_emacs_helper#g' ../scripts/build_fcitx5_bazel
+  sed -i -r 's#(^bazel)\s(build.*$)#\1 --host_jvm_args=--add-opens=java.base/java.lang=ALL-UNNAMED \2#' ../scripts/build_fcitx5_bazel
   QT_BASE_PATH=/usr/include/qt ../scripts/build_fcitx5_bazel
 
   # Extract license part of mozc
@@ -107,6 +109,7 @@ package() {
   cd mozc/src
   export PREFIX="${pkgdir}/usr"
   export _bldtype
+  sed -i -r '0,/install/s#^install.*$#\0\ninstall -D -m 755 "bazel-bin/unix/emacs/mozc_emacs_helper" "${PREFIX}/bin/mozc_emacs_helper"#' ../scripts/install_server_bazel
   ../scripts/install_server_bazel
 
   install -d "${pkgdir}/usr/share/licenses/$pkgname/"
